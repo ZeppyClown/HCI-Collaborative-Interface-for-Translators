@@ -7,7 +7,9 @@ nlp = spacy.load("en_core_web_sm")
 dotenv.load_dotenv()
 client = OpenAI()
 secret_key = os.getenv("OPENAI_API_KEY")
-
+if not secret_key:
+    raise ValueError("OPENAI_API_KEY not found in environment.")
+client = OpenAI(api_key=secret_key)
 
 def fanyi(input, model="gpt-4o", translate_from: str = "Chinese(Simplified)"):
     main_instruction = f"You are a translator and for this task, your objective is to translate from {translate_from} to English (United Kingdom). The response should only contain the translated text."
@@ -81,7 +83,7 @@ def extract_phrases(text):
     doc = nlp(text)
     return [chunk.text for chunk in doc.noun_chunks]
 
-def generate_phrase_alternatives(full_sent, logprobs, prob_threshold=-20.0):
+def generate_phrase_alternatives(full_sent, logprobs, prob_threshold=-10.0):
     doc = nlp(full_sent)
 
     output = []
@@ -106,7 +108,6 @@ def generate_phrase_alternatives(full_sent, logprobs, prob_threshold=-20.0):
         print("  🧩 Matching tokens in logprobs (by offset):")
         current_offset = 0
 
-        current_offset = 0
 
         for i, tok in enumerate(token_strs):
             is_space = tok.startswith("Ġ")
