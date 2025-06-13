@@ -151,7 +151,8 @@ def generate_phrase_alternatives(full_sent, logprobs, prob_threshold=-20.0):
 
 
 def main():
-    user_input = input("Enter a complete sentence to translate:\n")
+    print("Enter a complete sentence to translate")
+    user_input = input()
     translation_result = fanyi(user_input)
     
     result = translation_processing(translation_result)
