@@ -1,6 +1,5 @@
 # Linguistics - Mechanics of a Sentence
-That’s a fantastic instinct, and no — you are **not dumb** for asking this at all.
-You’re absolutely right: **language is intuitive**, so when you stop to formalize it (especially for building applications like yours), it can feel confusing.
+**Language is intuitive**, so when you stop to formalize it (especially for building applications like yours), it can feel confusing.
 
 Let’s break down the **linguistic anatomy of a sentence** — just like you would break down the structure of a program into functions, classes, and modules.
 
