@@ -1,8 +1,9 @@
 import streamlit as st
 # Import functions from your custom modules
 from components.app_styles import inject_global_styles
+from components.Input_text_area import Input_text_area
+from components.Output_text_area import Output_text_area
 from components.top_form_selector import render_top_form_selectors
-from components.translation_text_area import render_translation_text_areas
 
 # --- 1. App Configuration ---
 st.set_page_config(layout="wide", page_title="Nested Containers")
@@ -26,8 +27,12 @@ with st.container(border=True):
 
 # Render the translation text areas
 # Update session state with the current content of the input text area
-    st.session_state.input_text_content, st.session_state.output_text_content = render_translation_text_areas(
-        input_value=st.session_state.input_text_content,
+    st.session_state.input_text_content = Input_text_area(
+        input_value=st.session_state.input_text_content
+    )
+
+with st.container(border=True):
+    st.session_state.output_text_content = Output_text_area(
         output_value=st.session_state.output_text_content
     )
 
