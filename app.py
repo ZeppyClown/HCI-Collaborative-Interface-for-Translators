@@ -4,6 +4,7 @@ from components.app_styles import inject_global_styles
 from components.Input_text_area import Input_text_area
 from components.Output_text_area import Output_text_area
 from components.top_form_selector import render_top_form_selectors
+import streamlit.components.v1 as components
 
 # --- 1. App Configuration ---
 st.set_page_config(layout="wide", page_title="Nested Containers")
@@ -24,47 +25,74 @@ import streamlit as st
 from typing import List, Union, Tuple
 
 def render_annotated(tokens: List[Union[str, Tuple[str, str]]]):
-    style = """
-    <style>
-    .clickable {
-        background-color: #d0e6f7;
-        padding: 2px 6px;
-        margin: 0 2px;
-        border-radius: 5px;
-        cursor: pointer;
-        text-decoration: none;
-        color: black;
-    }
-    .clickable:hover {
-        background-color: #a3d0f0;
-    }
-    </style>
-    """
-
-    script = """
+    # Create the React component
+    react_component = """
+    <div id="root"></div>
+    <script src="https://unpkg.com/react@17/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js"></script>
     <script>
-    function sendWordToStreamlit(word) {
-        const output = document.getElementById("clicked-output");
-        output.innerText = "You clicked: " + word;
+    const e = React.createElement;
+
+    function AnnotatedText({ tokens }) {
+        const [clickedWord, setClickedWord] = React.useState(null);
+        
+        const handleClick = (word) => {
+            setClickedWord(word);
+        };
+        
+        return e('div', null, [
+            e('p', { key: 'text' },
+                tokens.map((token, i) => {
+                    if (Array.isArray(token)) {
+                        const [word, label] = token;
+                        return e('span', {
+                            key: i,
+                            className: 'clickable',
+                            onClick: () => handleClick(word),
+                            style: {
+                                backgroundColor: '#d0e6f7',
+                                padding: '2px 6px',
+                                margin: '0 2px',
+                                borderRadius: '5px',
+                                cursor: 'pointer'
+                            }
+                        }, word);
+                    }
+                    return e('span', { key: i }, token);
+                })
+            ),
+            clickedWord && e('p', {
+                key: 'output',
+                style: { marginTop: '1rem', fontWeight: 'bold' }
+            }, `You clicked: ${clickedWord}`)
+        ]);
     }
+
+    const tokens = %s;
+    
+    ReactDOM.render(
+        e(AnnotatedText, { tokens: tokens }),
+        document.getElementById('root')
+    );
     </script>
     """
-
-    html = style + script + "<p>"
-
+    
+    # Convert the tokens list to a JavaScript array representation
+    js_tokens = []
     for token in tokens:
         if isinstance(token, tuple):
-            word, label = token
-            html += f'<span class="clickable" onclick="sendWordToStreamlit(\'{word}\')">{word}</span>'
+            js_tokens.append([token[0], token[1]])  # Convert tuple to list for JSON serialization
         else:
-            html += token
-
-    html += "</p><p id='clicked-output' style='margin-top: 1rem; font-weight: bold;'></p>"
-
-    return html
+            js_tokens.append(token)
+    
+    import json
+    component_html = react_component % json.dumps(js_tokens)
+    
+    # Render the React component with reduced height
+    components.html(component_html, height=100)
 
 # Render everything
-st.markdown(render_annotated([
+render_annotated([
     "This ",
     ("is a man", "1"),
     " some ",
@@ -80,7 +108,7 @@ st.markdown(render_annotated([
     "And here's a ",
     ("word", ""),
     " with a fancy background but no label.",
-]), unsafe_allow_html=True)
+])
 
 # --- 4. Render UI Components & Handle Logic ---
 with st.container(border=True):
