@@ -1,16 +1,7 @@
 from __future__ import annotations
-import os, dotenv, json, math
-from openai import OpenAI
-from openai.types.chat import ChatCompletion
-
-import re
 from typing import List, Tuple, Dict
 import spacy
 from spacy.matcher import Matcher
-
-dotenv.load_dotenv()
-client = OpenAI()
-secret_key = os.getenv("OPENAI_API_KEY")
 
 # ------------------------------------------------------------------
 # 1.  Load a lightweight English pipeline (no NER, no parser needed)
@@ -99,22 +90,6 @@ def _char_span_to_token_span(
     return start_tok, end_tok
 
 
-def _extract_vps(doc):
-    vps = []
-    for token in doc:
-        if token.pos_ == "VERB":
-            # collect the verb itself and any “aux” / “auxpass” children
-            parts = [token] + [
-                child for child in token.children if child.dep_ in ("aux", "auxpass")
-            ]
-            # sort by position and form a span
-            parts = sorted(parts, key=lambda t: t.i)
-            start, end = parts[0].i, parts[-1].i + 1
-            span = doc[start:end]
-            vps.append(("VP", span.start_char, span.end_char))
-    return vps
-
-
 # ------------------------------------------------------------------
 # 4.  Chunk extractor (NPs + VPs)
 # ------------------------------------------------------------------
@@ -158,7 +133,7 @@ def _extract_chunks(doc: "spacy.tokens.Doc") -> List[Tuple[str, int, int]]:
     return filtered
 
 
-def sentence_chunking(bpe_tokens: List[str]) -> Tuple[List[Dict], str]:
+def chunk_sentence(bpe_tokens: List[str]) -> Tuple[List[Dict], str]:
     """
     Parameters
     ----------
@@ -192,58 +167,3 @@ def sentence_chunking(bpe_tokens: List[str]) -> Tuple[List[Dict], str]:
             }
         )
     return results, plain_text
-
-
-def translation_processing(response: ChatCompletion):
-    full_sent = response.choices[0].message.content
-    logprobs_content = response.choices[0].logprobs.content
-    logprobs_tokens = [row.token for row in logprobs_content]
-
-    chunks, sent = sentence_chunking(logprobs_tokens)
-
-    return chunks, sent
-
-
-def translation_init(
-    input, model="gpt-4o", translate_from: str = "Chinese(Simplified)"
-):
-    main_instruction = f"You are a translator and for this task, your objective is to translate from {translate_from} to English (United Kingdom). The response should only contain the translated text."
-    response = client.chat.completions.create(
-        model=model,
-        messages=[
-            {"role": "system", "content": main_instruction},
-            {"role": "user", "content": f"Please Translate:{input}"},
-        ],
-        logprobs=True,
-        top_logprobs=4,
-    )
-    return response
-
-
-def user_input():
-    print("Enter a complete sentence to translate")
-    return input()
-
-
-def translation_main():
-    # Get the User Input
-    source_text = user_input()
-
-    # Get the ChatCompletion Response from OpenAI
-    transl_resp = translation_init(source_text)
-
-    # Process the response
-
-    chunks, draft_sentence = translation_processing(transl_resp)
-
-    for ch in chunks:
-        print(ch)
-    return
-
-
-def main():
-    translation_main()
-
-
-if __name__ == "__main__":
-    main()
