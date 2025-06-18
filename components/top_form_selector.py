@@ -29,17 +29,16 @@ def render_top_form_selectors():
 
     with middle:
         # Removed the custom <div> with 'centered-button-container' as the CSS targets data-testid="stButton" directly
-        if st.button("", icon=":material/sync_alt:", use_container_width=False, key="centered_sync_button_within_col_top"): # Unique key
+        if st.button("Translate", use_container_width=False, key="centered_sync_button_within_col_top"): # Unique key
             st.session_state.sync_button_clicked_status = True
             button_was_clicked = True
-            st.success("Translation triggered!")
 
     with right:
         output_lang_selected = st.selectbox(
             "Output Language",
             ("English", "Spanish", "French", "German", "Chinese"),
             index=0,
-            key="output_language_selector" # Unique key
+            key="output_language_selector"
         )
     st.divider() # Divider inside the container
 
