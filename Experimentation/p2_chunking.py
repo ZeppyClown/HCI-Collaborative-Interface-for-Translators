@@ -2,6 +2,8 @@ from __future__ import annotations
 from typing import List, Tuple, Dict
 import spacy
 from spacy.matcher import Matcher
+import spacy.tokens
+import logging
 
 # ------------------------------------------------------------------
 # 1.  Load a lightweight English pipeline (no NER, no parser needed)
@@ -13,24 +15,24 @@ _nlp.enable_pipe("senter")  # keep sentence boundaries
 
 # Initialize the Matcher once (do this at module top)
 _matcher = Matcher(_nlp.vocab)
-# VP: optional AUX, one VERB, optional “that”
+
+# Verb Phrase Matching
 _matcher.add(
-    "VP", [[{"POS": "AUX", "OP": "?"}, {"POS": "VERB"}, {"LOWER": "that", "OP": "?"}]]
+    "VP",
+    [
+        [{"POS": "VERB"}],
+        [{"POS": "VERB"}, {"POS": "ADP", "OP": "?"}, {"POS": "SCONJ", "OP": "?"}],
+        [{"POS": "PART", "OP": "?"}, {"POS": "VERB"}],
+    ],
 )
-# PP: ADP + optional DET + one or more NOUN
-_matcher.add(
-    "PP", [[{"POS": "ADP"}, {"POS": "DET", "OP": "?"}, {"POS": "NOUN", "OP": "+"}]]
-)
-# ADJP: optional ADV + one or more ADJ
-_matcher.add("ADJP", [[{"POS": "ADV", "OP": "?"}, {"POS": "ADJ", "OP": "+"}]])
-# ADVP: one or more ADV
-_matcher.add("ADVP", [[{"POS": "ADV", "OP": "+"}]])
 
 
 # ------------------------------------------------------------------
 # 2.  Helpers:  BPE tokens  →  plain text + char-level spans
 # Essentially, what this thing is doing is called 'Detokenization'
 # ------------------------------------------------------------------
+
+
 def _tokens_to_text_and_char_spans(
     bpt_tokens: List[str],
 ) -> Tuple[str, List[Tuple[int, int]]]:
@@ -44,15 +46,7 @@ def _tokens_to_text_and_char_spans(
     cursor = 0
 
     for tok in bpt_tokens:
-        # OpenAI's BPE puts 'Ġ' in front of tokens that start with a space.
-        if tok.startswith("Ġ"):
-            surface = tok[1:]  # strip the marker
-            if text_parts:  # not the first word → insert space
-                text_parts.append(" ")
-                cursor += 1
-        else:
-            surface = tok
-
+        surface = tok
         start = (
             cursor  # Set the starting point of the index where the token's text begins
         )
@@ -68,6 +62,10 @@ def _tokens_to_text_and_char_spans(
         )  # append the range of the start and end char index of the token to the char_spans
 
     plain_text = "".join(text_parts)
+    # DEBUG
+    # for start, end in char_spans:
+    #     print(plain_text[start:end])
+
     return plain_text, char_spans
 
 
@@ -75,7 +73,9 @@ def _tokens_to_text_and_char_spans(
 # 3.  Map (start_char, end_char) → (start_token_idx, end_token_idx)
 # ------------------------------------------------------------------
 def _char_span_to_token_span(
-    start_c: int, end_c: int, token_char_spans: List[Tuple[int, int]]
+    start_c: int,
+    end_c: int,
+    token_char_spans: List[Tuple[int, int]],
 ) -> Tuple[int, int]:
     start_tok = end_tok = None
     for idx, (t_start, t_end) in enumerate(token_char_spans):
@@ -93,10 +93,10 @@ def _char_span_to_token_span(
 # ------------------------------------------------------------------
 # 4.  Chunk extractor (NPs + VPs)
 # ------------------------------------------------------------------
-def _extract_chunks(doc: "spacy.tokens.Doc") -> List[Tuple[str, int, int]]:
+def _extract_chunks(doc: spacy.tokens.Doc) -> List[Tuple[str, int, int]]:
     """
     Return list of tuples: (label, start_char, end_char)
-    for NP, VP, PP, ADJP, ADVP, **filtering out** any span
+    for NP and VP,  **filtering out** any span
     that is entirely contained within a strictly larger span.
     """
     spans: List[Tuple[str, int, int]] = []
@@ -105,6 +105,7 @@ def _extract_chunks(doc: "spacy.tokens.Doc") -> List[Tuple[str, int, int]]:
     for np in doc.noun_chunks:
         spans.append(("NP", np.start_char, np.end_char))
 
+    # UNUSED CODE: VERB PHRASES CAN'T BE OBTAINED SO QUICKLY
     # 2) Other phrases via Matcher (VP, PP, ADJP, ADVP)
     for match_id, start, end in _matcher(doc):
         label = doc.vocab.strings[match_id]
@@ -116,21 +117,52 @@ def _extract_chunks(doc: "spacy.tokens.Doc") -> List[Tuple[str, int, int]]:
 
     # 4) Filter out nested spans:
     filtered: List[Tuple[str, int, int]] = []
-    for label, start, end in spans:
-        # if there exists a strictly larger span that fully covers this one, skip it
-        is_nested = False
-        for _, o_start, o_end in spans:
-            if (o_start <= start and end <= o_end) and (
-                (o_end - o_start) > (end - start)
-            ):
-                is_nested = True
-                break
-        if not is_nested:
-            filtered.append((label, start, end))
+    for (
+        label,
+        start,
+        end,
+    ) in (
+        spans
+    ):  # iterate through the spans that we just sorted according to their grammatical sequence
+        if any(  # here, we are finding if there are any occurrences within the list of spans that overlap the current span in the iteration
+            os <= start
+            and end
+            <= oe  # Check to see: Does the start and end of the candidate span sit within the start and end of another?
+            for l, os, oe in spans
+            # Only compare against spans that are longer. This prevents a span from skipping itself
+            if (oe - os) > (end - start)
+        ):
+            continue
+        filtered.append((label, start, end))
 
     # 5) Return the surviving spans in order of appearance
     filtered.sort(key=lambda x: x[1])
     return filtered
+
+
+def add_single_token_chunks(doc: spacy.tokens.Doc, spans: List[Tuple[str, int, int]]):
+    """
+    `spans` is a list of (label, start_i, end_i) where start_i/end_i are token indices
+    for NP and VP chunks.  Returns a **new list** that also includes
+    1-token chunks ("TOK") filling every gap.
+    """
+
+    # 1) Build a boolean mask of covered tokens
+    covered = [False] * len(doc)
+    for _, start, end in spans:
+        for i in range(start, end):  # end exclusive
+            covered[i] = True
+
+    # 2) Walk through tokens to add single-token gaps
+    final = spans[:]  # copy existing NP/VP spans
+    for i, tok in enumerate(doc):
+        if not covered[i]:
+            final.append(("TOK", i, i + 1))  # a 1-token span
+
+    # 3) Sort everything in reading order
+    final.sort(key=lambda t: t[1])  # by start token index
+
+    return final
 
 
 def chunk_sentence(bpe_tokens: List[str]) -> Tuple[List[Dict], str]:
@@ -150,20 +182,33 @@ def chunk_sentence(bpe_tokens: List[str]) -> Tuple[List[Dict], str]:
     """
     plain_text, char_spans = _tokens_to_text_and_char_spans(bpe_tokens)
     doc = _nlp(plain_text)
+    print(bpe_tokens)
+    print([f"'{tok.text}'" for tok in doc])
 
-    raw_spans = _extract_chunks(doc)
+    npvp_char_spans = _extract_chunks(doc)  # Get all Noun and Verb Chunks
+
+    npvp_token_spans: List[Tuple[str, int, int]] = []
+
+    for label, s_npvp_c, e_npvp_c in npvp_char_spans:
+        print(doc.text[s_npvp_c:e_npvp_c])
+        start_tok, end_tok = _char_span_to_token_span(s_npvp_c, e_npvp_c, char_spans)
+        npvp_token_spans.append((label, start_tok, end_tok))
+
+    all_spans = add_single_token_chunks(doc, npvp_token_spans)
+    for label, s, e in all_spans:
+        print(label, doc[s:e])
 
     results = []
-    for idx, (label, start_c, end_c) in enumerate(raw_spans, start=1):
-        t_start, t_end = _char_span_to_token_span(start_c, end_c, char_spans)
-        if t_start is None or t_end is None:
-            continue
-        results.append(
-            {
-                "id": idx,
-                "label": label,
-                "text": plain_text[start_c:end_c],
-                "span_tokens": [t_start, t_end],
-            }
-        )
+    # for idx, (label, start_c, end_c) in enumerate(all_spans, start=1):
+    #     t_start, t_end = _char_span_to_token_span(start_c, end_c, char_spans)
+    #     if t_start is None or t_end is None:
+    #         continue
+    #     results.append(
+    #         {
+    #             "id": idx,
+    #             "label": label,
+    #             "text": plain_text[start_c:end_c],
+    #             "span_tokens": [t_start, t_end],
+    #         }
+    #     )
     return results, plain_text

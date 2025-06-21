@@ -23,13 +23,12 @@ def user_input():
 def transl_and_chunk():
     source_text = user_input()
     tokens, log_rows = translate(source_text)
+    
     chunks, plain_sent = chunk_sentence(tokens)
-
-    print(plain_sent)
-    print("\n")
-    print(chunks)
-    print("\n")
-    print(log_rows)
+    
+    # print(plain_sent)
+    # print(chunks)
+    
     return
 
 def main():
