@@ -26,8 +26,13 @@ def transl_and_chunk():
     
     chunks, plain_sent = chunk_sentence(tokens)
     
-    # print(plain_sent)
-    # print(chunks)
+    # Translated text
+    print("Translated Sentence: ", plain_sent)
+    
+    # Chunked Mappings
+    print("Chunks:")
+    for chunk in chunks:
+        print(chunk['id'], chunk['label'], chunk['text'], chunk['tok_range'], "\n")
     
     return
 

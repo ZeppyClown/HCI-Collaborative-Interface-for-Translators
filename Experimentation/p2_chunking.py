@@ -2,11 +2,12 @@ from __future__ import annotations
 from typing import List, Tuple, Dict
 import spacy
 from spacy.matcher import Matcher
+from spacy.util import filter_spans
 import spacy.tokens
 import logging
 
 # ------------------------------------------------------------------
-# 1.  Load a lightweight English pipeline (no NER, no parser needed)
+# 1.  Load a lightweight English pipeline (no NER, but parser needed)
 # ------------------------------------------------------------------
 # For quick prototyping `en_core_web_sm` is enough.
 # Swap to 'en_core_web_trf' later for better accuracy.
@@ -19,11 +20,7 @@ _matcher = Matcher(_nlp.vocab)
 # Verb Phrase Matching
 _matcher.add(
     "VP",
-    [
-        [{"POS": "VERB"}],
-        [{"POS": "VERB"}, {"POS": "ADP", "OP": "?"}, {"POS": "SCONJ", "OP": "?"}],
-        [{"POS": "PART", "OP": "?"}, {"POS": "VERB"}],
-    ],
+    [[{"POS": "AUX", "OP": "*"}, {"POS": "VERB", "OP": "+"}]],
 )
 
 
@@ -31,8 +28,6 @@ _matcher.add(
 # 2.  Helpers:  BPE tokens  →  plain text + char-level spans
 # Essentially, what this thing is doing is called 'Detokenization'
 # ------------------------------------------------------------------
-
-
 def _tokens_to_text_and_char_spans(
     bpt_tokens: List[str],
 ) -> Tuple[str, List[Tuple[int, int]]]:
@@ -62,11 +57,22 @@ def _tokens_to_text_and_char_spans(
         )  # append the range of the start and end char index of the token to the char_spans
 
     plain_text = "".join(text_parts)
-    # DEBUG
-    # for start, end in char_spans:
-    #     print(plain_text[start:end])
 
     return plain_text, char_spans
+
+
+def _tokens_to_plaintext(oai_bpe_tokens: List[str]):
+    """
+    Re-join GPT BPE tokens into plain text.
+    """
+    text_parts: List[str] = []
+
+    for tok in oai_bpe_tokens:
+        text_parts.append(tok)
+
+    plain_text = "".join(text_parts)
+
+    return plain_text
 
 
 # ------------------------------------------------------------------
@@ -93,51 +99,47 @@ def _char_span_to_token_span(
 # ------------------------------------------------------------------
 # 4.  Chunk extractor (NPs + VPs)
 # ------------------------------------------------------------------
-def _extract_chunks(doc: spacy.tokens.Doc) -> List[Tuple[str, int, int]]:
+def _extract_chunks(doc: spacy.tokens.Doc):
     """
-    Return list of tuples: (label, start_char, end_char)
-    for NP and VP,  **filtering out** any span
+
+    Return a list of tuples: (label, start_tok, end_tok)
+    for Noun Chunks, Verb Phrases and any other possible phrases based on TOKEN RANGE
+    **filtering out** any span
     that is entirely contained within a strictly larger span.
     """
-    spans: List[Tuple[str, int, int]] = []
+
+    npvp_spans: List[spacy.tokens.Span] = []
 
     # 1) Noun Phrases
     for np in doc.noun_chunks:
-        spans.append(("NP", np.start_char, np.end_char))
+        # tok_spans.append(("NP", np.start, np.end))
+        npvp_spans.append(np)
 
-    # UNUSED CODE: VERB PHRASES CAN'T BE OBTAINED SO QUICKLY
     # 2) Other phrases via Matcher (VP, PP, ADJP, ADVP)
     for match_id, start, end in _matcher(doc):
         label = doc.vocab.strings[match_id]
-        span = doc[start:end]
-        spans.append((label, span.start_char, span.end_char))
+        # tok_spans.append((label, start,end))
+        npvp_spans.append(spacy.tokens.Span(doc, start, end, label))
 
-    # 3) Sort by start asc, length desc
-    spans = sorted(spans, key=lambda x: (x[1], -(x[2] - x[1])))
+    # 3) Filter out nested spans:
+    npvp_spans = filter_spans(npvp_spans)
+    npvp_spans = sorted(npvp_spans, key=lambda s: s.start)
 
-    # 4) Filter out nested spans:
-    filtered: List[Tuple[str, int, int]] = []
-    for (
-        label,
-        start,
-        end,
-    ) in (
-        spans
-    ):  # iterate through the spans that we just sorted according to their grammatical sequence
-        if any(  # here, we are finding if there are any occurrences within the list of spans that overlap the current span in the iteration
-            os <= start
-            and end
-            <= oe  # Check to see: Does the start and end of the candidate span sit within the start and end of another?
-            for l, os, oe in spans
-            # Only compare against spans that are longer. This prevents a span from skipping itself
-            if (oe - os) > (end - start)
-        ):
-            continue
-        filtered.append((label, start, end))
+    # 4) Get the remaining tokens as spans with their own respective POS label
+    # First, identify the tokens that we have covered
+    covered = set()
+    for span in npvp_spans:
+        covered.update(range(span.start, span.end))
 
-    # 5) Return the surviving spans in order of appearance
-    filtered.sort(key=lambda x: x[1])
-    return filtered
+    # Now, iterate through the whole document and get all the leftover tokens
+    remain_toks = [tok for tok in doc if tok.i not in covered]
+    remaining_spans = [
+        spacy.tokens.Span(doc, tok.i, tok.i + 1, label=tok.pos_) for tok in remain_toks
+    ]
+
+    all_spans = sorted(npvp_spans + remaining_spans, key=lambda s: s.start)
+
+    return all_spans
 
 
 def add_single_token_chunks(doc: spacy.tokens.Doc, spans: List[Tuple[str, int, int]]):
@@ -180,35 +182,23 @@ def chunk_sentence(bpe_tokens: List[str]) -> Tuple[List[Dict], str]:
     plain_text : str
         The reconstructed sentence (for debugging / display)
     """
-    plain_text, char_spans = _tokens_to_text_and_char_spans(bpe_tokens)
+    plain_text = _tokens_to_plaintext(bpe_tokens)
     doc = _nlp(plain_text)
-    print(bpe_tokens)
-    print([f"'{tok.text}'" for tok in doc])
 
-    npvp_char_spans = _extract_chunks(doc)  # Get all Noun and Verb Chunks
-
-    npvp_token_spans: List[Tuple[str, int, int]] = []
-
-    for label, s_npvp_c, e_npvp_c in npvp_char_spans:
-        print(doc.text[s_npvp_c:e_npvp_c])
-        start_tok, end_tok = _char_span_to_token_span(s_npvp_c, e_npvp_c, char_spans)
-        npvp_token_spans.append((label, start_tok, end_tok))
-
-    all_spans = add_single_token_chunks(doc, npvp_token_spans)
-    for label, s, e in all_spans:
-        print(label, doc[s:e])
+    chunks = _extract_chunks(doc)  # Chunk the entire freaking document
 
     results = []
-    # for idx, (label, start_c, end_c) in enumerate(all_spans, start=1):
-    #     t_start, t_end = _char_span_to_token_span(start_c, end_c, char_spans)
-    #     if t_start is None or t_end is None:
-    #         continue
-    #     results.append(
-    #         {
-    #             "id": idx,
-    #             "label": label,
-    #             "text": plain_text[start_c:end_c],
-    #             "span_tokens": [t_start, t_end],
-    #         }
-    #     )
+    for idx, span in enumerate(chunks):
+        results.append(
+            {
+                "id": idx,
+                "label": span.label_ if span.label_ else "OTHER",
+                "text": span.text,
+                "tok_range": [
+                    span.start,
+                    span.end,
+                ],  # REMEMBER, the end for any span from spaCy is exclusive when deriving the actual token text from the doc
+            }
+        )
+
     return results, plain_text
