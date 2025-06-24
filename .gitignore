@@ -1,2 +1,3 @@
 .venv/
-Experimentation/.env
+venv/
+testing_and_research/.env
