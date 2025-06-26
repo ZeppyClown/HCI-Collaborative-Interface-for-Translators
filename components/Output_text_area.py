@@ -5,6 +5,7 @@ import streamlit.components.v1 as components
 import streamlit as st
 from typing import List, Union, Tuple
 
+
 # Simulated "streaming" function
 def stream_data(text):
     full_text = ""
@@ -12,6 +13,7 @@ def stream_data(text):
         full_text += word + " "
         yield full_text
         time.sleep(0.01)
+
 
 def render_annotated(tokens: List[Union[str, Tuple[str, str]]], alt_phrases: dict):
     # Convert the tokens list to a JavaScript array representation
@@ -21,11 +23,12 @@ def render_annotated(tokens: List[Union[str, Tuple[str, str]]], alt_phrases: dic
             js_tokens.append([token[0], token[1]])
         else:
             js_tokens.append(token)
-    
+
     import json
+
     tokens_json = json.dumps(js_tokens)
     alt_phrases_json = json.dumps(alt_phrases)
-    
+
     # Create the React component with safe string formatting
     react_component = f"""
     <div id="root"></div>
@@ -169,56 +172,74 @@ def render_annotated(tokens: List[Union[str, Tuple[str, str]]], alt_phrases: dic
     }}
     </style>
     """
-    
+
     # Start with minimum height and let it adjust dynamically
     components.html(react_component, height=250, scrolling=True)
 
-# Main output function
-def Output_text_area(input_value=""):
-    if "translation_output" not in st.session_state:
-        st.session_state.translation_output = ""
 
-    if st.session_state.get("sync_button_clicked_status", False):
-        sentence = input_value # value user typed in
+# Main output function
+def Output_text_area(logprob_rows, oai_tokens: List[str], spcy_chunks: List[dict]):
+    # I feel like I am learning and ageing quicker than ever as I do this project
+    # @ZeppyClown Here's the info on the parameters
+    """
+        logprob_rows : The log probabilities of each respective chatcompletion response that was gotten back from OpenAI API. It corresponds to each OpenAI Response Token
         
-        # Define the tokens and their alternatives together
-        tokens = [
-            "",
-            ("An 80-year-long study", "1"),
-            ("shows that good interpersonal relationships ", "2"),
-            "can make a person ",
-            ("happier", "3"),
-            " and ",
-            ("healthier", "4")
-        ]
+        oai_tokens: This is a list of just the tokens that was returned by OpenAI API in the chatcompletion response
         
-        alt_phrases = {
-            "An 80-year-long study": [
-                "An 80-year-long study",
-                "A study of 80 years",
-                "An 8-decade-long research"
-            ],
-            "shows that good interpersonal relationships ": [
-                "shows that good interpersonal relationships ",
-                "demonstrates that strong social bonds ",
-                "reveals that healthy personal connections "
-            ],
-            "happier": [
-                "happier",
-                "more joyful",
-                "more content"
-            ],
-            "healthier": [
-                "healthier",
-                "more healthy",
-                "in better health"
-            ]
-        }
+        spcy_chunks: This is the list of chunks that have been created based on the main chatcompletion translation response from OpenAI
+    """
+
+    with st.container(border=False) as alter_area:
+        # I took the chunks and manipulated it to fit into the HTML component parameters you have provided.
+        view_chunks = [(c["text"], c["id"]) for c in spcy_chunks]
         
         # Pass both tokens and alt_phrases to render_annotated
-        render_annotated(tokens, alt_phrases)
+        render_annotated(view_chunks, {})
+        
+        
+        # if "translation_output" not in st.session_state:
+        #     st.session_state.translation_output = ""
 
-        st.session_state.sync_button_clicked_status = False
-        # st.success("Translation completed!")
+        # if st.session_state.get("sync_button_clicked_status", False):
+        # sentence = input_value # value user typed in
+
+        # Define the tokens and their alternatives together
+        # tokens = [
+        #     "",
+        #     ("An 80-year-long study", "1"),
+        #     ("shows that good interpersonal relationships ", "2"),
+        #     "can make a person ",
+        #     ("happier", "3"),
+        #     " and ",
+        #     ("healthier", "4")
+        # ]
+
+        # alt_phrases = {
+        #     "An 80-year-long study": [
+        #         "An 80-year-long study",
+        #         "A study of 80 years",
+        #         "An 8-decade-long research"
+        #     ],
+        #     "shows that good interpersonal relationships ": [
+        #         "shows that good interpersonal relationships ",
+        #         "demonstrates that strong social bonds ",
+        #         "reveals that healthy personal connections "
+        #     ],
+        #     "happier": [
+        #         "happier",
+        #         "more joyful",
+        #         "more content"
+        #     ],
+        #     "healthier": [
+        #         "healthier",
+        #         "more healthy",
+        #         "in better health"
+        #     ]
+        # }
+
     
-    return input_value
+
+    # st.session_state.sync_button_clicked_status = False
+    # st.success("Translation completed!")
+
+    return alter_area

@@ -197,7 +197,7 @@ def chunk_sentence(bpe_tokens: List[str]) -> Tuple[List[Dict], str]:
                 "tok_range": [
                     span.start,
                     span.end,
-                ],  # REMEMBER, the end for any span from spaCy is exclusive when deriving the actual token text from the doc
+                ],  # REMEMBER, the *end token* for any span from spaCy is exclusive when deriving the actual token text from the doc
             }
         )
 
