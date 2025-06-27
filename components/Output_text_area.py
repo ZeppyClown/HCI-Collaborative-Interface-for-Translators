@@ -102,18 +102,18 @@ def render_annotated(tokens: List[Union[str, Tuple[str, str]]], alt_phrases: dic
         
         return e('div', {{
             style: {{
-                padding: '20px',
+                height: 'auto',
+                padding: '5px 0px 20px 0px',
                 width: '100%',
                 backgroundColor: '#ffffff',
-                borderRadius: '8px',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+                borderRadius: '8px'
             }}
         }}, [
             e('p', {{ 
                 key: 'text',
                 style: {{
                     fontSize: '18px',
-                    lineHeight: '1.6',
+                    lineHeight: '2.0',
                     margin: '0 0 20px 0'
                 }}
             }},
