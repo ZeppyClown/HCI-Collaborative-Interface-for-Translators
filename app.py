@@ -18,7 +18,7 @@ from testing_and_research.p2_chunking import chunk_sentence
 
 
 # --- 1. App Configuration ---
-st.set_page_config(layout="centered", page_title="Nested Containers")
+st.set_page_config(layout="wide", page_title="Nested Containers")
 
 # --- 2. Inject Global Styles ---
 inject_global_styles()
@@ -74,6 +74,10 @@ else:
                 # For this one I imported the *chunk_sentence* function from p2_chunking.py as a python module (see line 17 of this file)
                     # Implement Chunking to get the different semantic chunks according to our customised spaCy shallow parser
                 chunks, plaintext = chunk_sentence(tokens)
+                
+                # print("OpenAI Tokens:\n", tokens, "\n")
+                # print("log probabilities of the output tokens:\n", logrows, "\n")
+                # print("Chunks produced using spaCy tokenization:\n", chunks, "\n")
             
             OutputContainer(plaintext, logrows, chunks, tokens)
 

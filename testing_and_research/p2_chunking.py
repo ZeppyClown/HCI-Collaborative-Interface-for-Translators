@@ -115,7 +115,7 @@ def _extract_chunks(doc: spacy.tokens.Doc):
         # tok_spans.append(("NP", np.start, np.end))
         npvp_spans.append(np)
 
-    # 2) Other phrases via Matcher (VP, PP, ADJP, ADVP)
+    # 2) Other phrases via Matcher (VP)
     for match_id, start, end in _matcher(doc):
         label = doc.vocab.strings[match_id]
         # tok_spans.append((label, start,end))

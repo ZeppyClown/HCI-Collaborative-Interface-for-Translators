@@ -1,0 +1,496 @@
+[
+  {
+    "token": "A",
+    "logprob": -1.2234565019607544,
+    "top_logprobs": [
+      {
+        "token": "An",
+        "logprob": -0.348456472158432
+      },
+      {
+        "token": "A",
+        "logprob": -1.2234565019607544
+      },
+      {
+        "token": "Research",
+        "logprob": -12.223456382751465
+      },
+      {
+        "token": "According",
+        "logprob": -12.723456382751465
+      },
+      {
+        "token": "The",
+        "logprob": -13.348456382751465
+      }
+    ]
+  },
+  {
+    "token": " study",
+    "logprob": -0.05837981030344963,
+    "top_logprobs": [
+      {
+        "token": " study",
+        "logprob": -0.05837981030344963
+      },
+      {
+        "token": " ",
+        "logprob": -3.058379888534546
+      },
+      {
+        "token": " long",
+        "logprob": -4.745879650115967
+      },
+      {
+        "token": " research",
+        "logprob": -7.683379650115967
+      },
+      {
+        "token": " longitudinal",
+        "logprob": -7.995879650115967
+      }
+    ]
+  },
+  {
+    "token": " spanning",
+    "logprob": -0.020243104547262192,
+    "top_logprobs": [
+      {
+        "token": " spanning",
+        "logprob": -0.020243104547262192
+      },
+      {
+        "token": " lasting",
+        "logprob": -4.020243167877197
+      },
+      {
+        "token": " that",
+        "logprob": -7.020243167877197
+      },
+      {
+        "token": " conducted",
+        "logprob": -7.145243167877197
+      },
+      {
+        "token": " over",
+        "logprob": -7.895243167877197
+      }
+    ]
+  },
+  {
+    "token": " ",
+    "logprob": -5.860340752406046e-5,
+    "top_logprobs": [
+      {
+        "token": " ",
+        "logprob": -5.860340752406046e-5
+      },
+      {
+        "token": " over",
+        "logprob": -9.7500581741333
+      },
+      {
+        "token": " eighty",
+        "logprob": -15.8750581741333
+      },
+      {
+        "token": " up",
+        "logprob": -16.875059127807617
+      },
+      {
+        "token": " eight",
+        "logprob": -17.375059127807617
+      }
+    ]
+  },
+  {
+    "token": "80",
+    "logprob": 0.0,
+    "top_logprobs": [
+      {
+        "token": "80",
+        "logprob": 0.0
+      },
+      {
+        "token": " eighty",
+        "logprob": -23.625
+      },
+      {
+        "token": " ",
+        "logprob": -26.125
+      },
+      {
+        "token": "8",
+        "logprob": -26.5
+      },
+      {
+        "token": " eight",
+        "logprob": -30.875
+      }
+    ]
+  },
+  {
+    "token": " years",
+    "logprob": 0.0,
+    "top_logprobs": [
+      {
+        "token": " years",
+        "logprob": 0.0
+      },
+      {
+        "token": "-years",
+        "logprob": -18.875
+      },
+      {
+        "token": "-year",
+        "logprob": -24.125
+      },
+      {
+        "token": "years",
+        "logprob": -25.0625
+      },
+      {
+        "token": "\u00a0",
+        "logprob": -25.9375
+      }
+    ]
+  },
+  {
+    "token": " shows",
+    "logprob": -0.43715301156044006,
+    "top_logprobs": [
+      {
+        "token": " shows",
+        "logprob": -0.43715301156044006
+      },
+      {
+        "token": " indicates",
+        "logprob": -1.4371529817581177
+      },
+      {
+        "token": " suggests",
+        "logprob": -2.1871531009674072
+      },
+      {
+        "token": " has",
+        "logprob": -5.562152862548828
+      },
+      {
+        "token": " reveals",
+        "logprob": -7.937152862548828
+      }
+    ]
+  },
+  {
+    "token": " that",
+    "logprob": -5.512236498361744e-7,
+    "top_logprobs": [
+      {
+        "token": " that",
+        "logprob": -5.512236498361744e-7
+      },
+      {
+        "token": " good",
+        "logprob": -14.625000953674316
+      },
+      {
+        "token": " a",
+        "logprob": -23.8125
+      },
+      {
+        "token": " positive",
+        "logprob": -24.0625
+      },
+      {
+        "token": " having",
+        "logprob": -24.125
+      }
+    ]
+  },
+  {
+    "token": " good",
+    "logprob": -1.5451681974809617e-5,
+    "top_logprobs": [
+      {
+        "token": " good",
+        "logprob": -1.5451681974809617e-5
+      },
+      {
+        "token": " positive",
+        "logprob": -12.250015258789062
+      },
+      {
+        "token": " strong",
+        "logprob": -12.437515258789062
+      },
+      {
+        "token": " healthy",
+        "logprob": -12.625015258789062
+      },
+      {
+        "token": " having",
+        "logprob": -12.687515258789062
+      }
+    ]
+  },
+  {
+    "token": " interpersonal",
+    "logprob": -0.20266184210777283,
+    "top_logprobs": [
+      {
+        "token": " interpersonal",
+        "logprob": -0.20266184210777283
+      },
+      {
+        "token": " relationships",
+        "logprob": -1.7026618719100952
+      },
+      {
+        "token": " personal",
+        "logprob": -6.702661991119385
+      },
+      {
+        "token": " social",
+        "logprob": -11.452661514282227
+      },
+      {
+        "token": " human",
+        "logprob": -11.577661514282227
+      }
+    ]
+  },
+  {
+    "token": " relationships",
+    "logprob": -6.704273118884885e-7,
+    "top_logprobs": [
+      {
+        "token": " relationships",
+        "logprob": -6.704273118884885e-7
+      },
+      {
+        "token": " relations",
+        "logprob": -14.250000953674316
+      },
+      {
+        "token": " connections",
+        "logprob": -22.4375
+      },
+      {
+        "token": " relationship",
+        "logprob": -23.09375
+      },
+      {
+        "token": " Relationships",
+        "logprob": -23.125
+      }
+    ]
+  },
+  {
+    "token": " can",
+    "logprob": -0.002517873188480735,
+    "top_logprobs": [
+      {
+        "token": " can",
+        "logprob": -0.002517873188480735
+      },
+      {
+        "token": " make",
+        "logprob": -6.0025177001953125
+      },
+      {
+        "token": " lead",
+        "logprob": -10.252517700195312
+      },
+      {
+        "token": " contribute",
+        "logprob": -12.127517700195312
+      },
+      {
+        "token": " enable",
+        "logprob": -13.627517700195312
+      }
+    ]
+  },
+  {
+    "token": " make",
+    "logprob": -0.00010235115041723475,
+    "top_logprobs": [
+      {
+        "token": " make",
+        "logprob": -0.00010235115041723475
+      },
+      {
+        "token": " lead",
+        "logprob": -9.187602043151855
+      },
+      {
+        "token": " result",
+        "logprob": -17.382915496826172
+      },
+      {
+        "token": " enable",
+        "logprob": -18.226665496826172
+      },
+      {
+        "token": " contribute",
+        "logprob": -18.759868621826172
+      }
+    ]
+  },
+  {
+    "token": " a",
+    "logprob": -1.0325924449716695e-5,
+    "top_logprobs": [
+      {
+        "token": " a",
+        "logprob": -1.0325924449716695e-5
+      },
+      {
+        "token": " one",
+        "logprob": -12.00001049041748
+      },
+      {
+        "token": " people",
+        "logprob": -13.12501049041748
+      },
+      {
+        "token": " someone",
+        "logprob": -13.12501049041748
+      },
+      {
+        "token": " an",
+        "logprob": -16.500009536743164
+      }
+    ]
+  },
+  {
+    "token": " person",
+    "logprob": 0.0,
+    "top_logprobs": [
+      {
+        "token": " person",
+        "logprob": 0.0
+      },
+      {
+        "token": " person's",
+        "logprob": -21.625
+      },
+      {
+        "token": "<|end|>",
+        "logprob": -24.5
+      },
+      {
+        "token": " individual",
+        "logprob": -25.265625
+      },
+      {
+        "token": " people",
+        "logprob": -26.13671875
+      }
+    ]
+  },
+  {
+    "token": " happier",
+    "logprob": -7.465036105713807e-6,
+    "top_logprobs": [
+      {
+        "token": " happier",
+        "logprob": -7.465036105713807e-6
+      },
+      {
+        "token": " more",
+        "logprob": -11.875007629394531
+      },
+      {
+        "token": " healthier",
+        "logprob": -15.125007629394531
+      },
+      {
+        "token": " both",
+        "logprob": -15.750007629394531
+      },
+      {
+        "token": " hap",
+        "logprob": -20.62500762939453
+      }
+    ]
+  },
+  {
+    "token": " and",
+    "logprob": 0.0,
+    "top_logprobs": [
+      {
+        "token": " and",
+        "logprob": 0.0
+      },
+      {
+        "token": ",",
+        "logprob": -16.9375
+      },
+      {
+        "token": " ",
+        "logprob": -24.171875
+      },
+      {
+        "token": "and",
+        "logprob": -24.6015625
+      },
+      {
+        "token": ".",
+        "logprob": -24.6171875
+      }
+    ]
+  },
+  {
+    "token": " healthier",
+    "logprob": -1.9361264946837764e-7,
+    "top_logprobs": [
+      {
+        "token": " healthier",
+        "logprob": -1.9361264946837764e-7
+      },
+      {
+        "token": " more",
+        "logprob": -16.5
+      },
+      {
+        "token": " health",
+        "logprob": -22.0
+      },
+      {
+        "token": " in",
+        "logprob": -24.125
+      },
+      {
+        "token": " healthy",
+        "logprob": -24.875
+      }
+    ]
+  },
+  {
+    "token": ".",
+    "logprob": -3.128163257315464e-7,
+    "top_logprobs": [
+      {
+        "token": ".",
+        "logprob": -3.128163257315464e-7
+      },
+      {
+        "token": ".\n",
+        "logprob": -15.75
+      },
+      {
+        "token": "\u3002",
+        "logprob": -17.125
+      },
+      {
+        "token": ".\u200b",
+        "logprob": -17.625
+      },
+      {
+        "token": ".\n\n",
+        "logprob": -18.5
+      }
+    ]
+  }
+]
