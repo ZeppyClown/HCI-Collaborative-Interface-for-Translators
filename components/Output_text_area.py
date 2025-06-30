@@ -1,9 +1,12 @@
 import streamlit as st
+import ast
 import time
 from annotated_text import annotated_text
 import streamlit.components.v1 as components
 import streamlit as st
 from typing import List, Union, Tuple
+
+from testing_and_research.p4_alt_builder import alt_builder
 
 
 # Simulated "streaming" function
@@ -182,21 +185,33 @@ def Output_text_area(logprob_rows, oai_tokens: List[str], spcy_chunks: List[dict
     # I feel like I am learning and ageing quicker than ever as I do this project
     # @ZeppyClown Here's the info on the parameters
     """
-        logprob_rows : The log probabilities of each respective chatcompletion response that was gotten back from OpenAI API. It corresponds to each OpenAI Response Token
-        
-        oai_tokens: This is a list of just the tokens that was returned by OpenAI API in the chatcompletion response
-        
-        spcy_chunks: This is the list of chunks that have been created based on the main chatcompletion translation response from OpenAI
+    logprob_rows : The log probabilities of each respective chatcompletion response that was gotten back from OpenAI API. It corresponds to each OpenAI Response Token
+
+    oai_tokens: This is a list of just the tokens that was returned by OpenAI API in the chatcompletion response
+
+    spcy_chunks: This is the list of chunks that have been created based on the main chatcompletion translation response from OpenAI
     """
 
     with st.container(border=False) as alter_area:
         # I took the chunks and manipulated it to fit into the HTML component parameters you have provided.
         view_chunks = [(c["text"], c["id"]) for c in spcy_chunks]
         
+        alternate_list = alt_builder(view_chunks[0][0])
+        convert_alt_list = ast.literal_eval(alternate_list)
+        print(convert_alt_list)
+        chunk_alts = {view_chunks[0][0]: convert_alt_list}
+        # for idx, (text, id) in enumerate(view_chunks):
+        #     if spcy_chunks[idx]["label"] == "PUNCT":
+        #         continue
+        #     else:
+        #         # get all alternative forms of phrasing
+        #         list_alts: list[str] = alt_builder(text)
+        #         chunk_alts = {f"{text}": list_alts}
+        
+        render_annotated(view_chunks, chunk_alts)
+
         # Pass both tokens and alt_phrases to render_annotated
-        render_annotated(view_chunks, {})
-        
-        
+
         # if "translation_output" not in st.session_state:
         #     st.session_state.translation_output = ""
 
@@ -236,8 +251,6 @@ def Output_text_area(logprob_rows, oai_tokens: List[str], spcy_chunks: List[dict
         #         "in better health"
         #     ]
         # }
-
-    
 
     # st.session_state.sync_button_clicked_status = False
     # st.success("Translation completed!")

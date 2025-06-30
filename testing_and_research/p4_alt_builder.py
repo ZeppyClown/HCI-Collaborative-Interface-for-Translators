@@ -3,9 +3,16 @@
 build_alternatives_for_chunk(logprob_rows, span_tokens, ...)
 returns a list of dicts: {"text": alt_phrase, "score": logprob_sum}
 """
-
+import os, dotenv, pathlib
 from itertools import combinations, product
 from typing import List, Dict, Tuple
+from openai import OpenAI
+
+dotenv.load_dotenv()
+client = OpenAI()
+secret_key = os.getenv("OPENAI_API_KEY")
+
+_dir = pathlib.Path(os.getcwd()).resolve()
 
 
 def _surface(tok: str) -> str:
@@ -53,3 +60,31 @@ def build_alternatives_for_chunk(
     # sort by score, keep_top_n
     best = sorted(phrases.items(), key=lambda kv: kv[1], reverse=True)[:keep_top_n]
     return [{"text": p, "score": s} for p, s in best]
+
+
+def whack_alt_phrasing(chunk: str, sug_count: int = 3):
+    model = "gpt-4o-mini"
+    with open(_dir / "testing_and_research" / "phrasingprompt.txt", "r") as f:
+        instructions = f.read()
+    response = client.responses.create(
+        model=model,
+        instructions=instructions,
+        input=[
+            {
+                "role": "user",
+                "content": f"Give me at least {sug_count} alternatives to saying: {chunk}",
+            },
+        ],
+    )
+
+    return response
+
+
+def alt_builder(chunk: str) -> list[str]:
+    resp = whack_alt_phrasing(chunk)
+    list_alts: list[str] = resp.output_text
+    return list_alts
+
+
+if __name__ == "__main__":
+    alt_builder("A study spanning 80 years")

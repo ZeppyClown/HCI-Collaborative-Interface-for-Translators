@@ -18,7 +18,7 @@ def fanyi(input, model="gpt-4o", translate_from: str = "Chinese(Simplified)"):
             {"role": "user", "content": f"Please Translate:{input}"},
         ],
         logprobs=True,
-        top_logprobs=3,
+        top_logprobs=5,
     )
     return response
 
@@ -38,10 +38,14 @@ def translation_processing(response: ChatCompletion):
             token_data = {
                 "token": item.token,
                 "logprob": item.logprob,
-                "top_logprobs": [
-                    {"token": alt.token, "logprob": alt.logprob}
-                    for alt in item.top_logprobs
-                ] if item.top_logprobs else []
+                "top_logprobs": (
+                    [
+                        {"token": alt.token, "logprob": alt.logprob}
+                        for alt in item.top_logprobs
+                    ]
+                    if item.top_logprobs
+                    else []
+                ),
             }
             processed_logprobs.append(token_data)
 
@@ -76,10 +80,10 @@ def generate_candidate_sentences(logprobs, prob_threshold=-1.5):
     return list(candidates)
 
 
-
 def extract_phrases(text):
     doc = nlp(text)
     return [chunk.text for chunk in doc.noun_chunks]
+
 
 def generate_phrase_alternatives(full_sent, logprobs, prob_threshold=-20.0):
     doc = nlp(full_sent)
@@ -124,10 +128,12 @@ def generate_phrase_alternatives(full_sent, logprobs, prob_threshold=-20.0):
 
         if not phrase_tokens:
             print("  ⚠️  No matching tokens found for phrase span.")
-            output.append({
-                "original_phrase": chunk.text,
-                "alternatives": ["(Phrase not matched to token span)"]
-            })
+            output.append(
+                {
+                    "original_phrase": chunk.text,
+                    "alternatives": ["(Phrase not matched to token span)"],
+                }
+            )
             continue
 
         for i, _ in phrase_tokens:
@@ -136,25 +142,34 @@ def generate_phrase_alternatives(full_sent, logprobs, prob_threshold=-20.0):
                 if alt["token"] != tok_log["token"] and alt["logprob"] > prob_threshold:
                     alt_tokens = token_strs.copy()
                     alt_tokens[i] = alt["token"]
-                    new_phrase = "".join([alt_tokens[j] for j, _ in phrase_tokens]).replace("Ġ", " ").strip()
+                    new_phrase = (
+                        "".join([alt_tokens[j] for j, _ in phrase_tokens])
+                        .replace("Ġ", " ")
+                        .strip()
+                    )
                     phrase_alts.append(new_phrase)
 
         if not phrase_alts:
             phrase_alts = ["(No good alternatives found)"]
 
-        output.append({
-            "original_phrase": chunk.text,
-            "alternatives": list(set(phrase_alts))
-        })
+        output.append(
+            {"original_phrase": chunk.text, "alternatives": list(set(phrase_alts))}
+        )
 
     return output
+
+
+def transl_logprobs():
+    t_result = fanyi("一项长达80年的研究表明良好的人际关系能让一个人更幸福、更健康。")
+    full_sent, logprobs = translation_processing(t_result)
+    print(json.dumps(logprobs, indent=4))
 
 
 def main():
     print("Enter a complete sentence to translate")
     user_input = input()
     translation_result = fanyi(user_input)
-    
+
     result = translation_processing(translation_result)
     if not result:
         print("No logprobs available for candidate generation.")
@@ -179,5 +194,6 @@ def main():
         else:
             print("  (No good alternatives found)")
 
+
 if __name__ == "__main__":
-    main()
+    transl_logprobs()
