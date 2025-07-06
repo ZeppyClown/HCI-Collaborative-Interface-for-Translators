@@ -2,3 +2,4 @@
 venv/
 testing_and_research/.env
 .DS_STORE
+.env

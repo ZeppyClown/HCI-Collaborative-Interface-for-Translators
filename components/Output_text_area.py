@@ -39,22 +39,16 @@ def render_annotated(tokens: Sequence[Union[str, Tuple[str, str]]], alt_phrases:
     function AnnotatedText({{ tokens: initialTokens, altPhrases: initialAltPhrases }}) {{
         const [tokens, setTokens] = React.useState(initialTokens);
         const [altPhrases, setAltPhrases] = React.useState(initialAltPhrases);
-        const [currentChunkIndex, setCurrentChunkIndex] = React.useState(0);
-        // When all chunks are done, set to null
-        const [done, setDone] = React.useState(false);
+        const [selectedChunkIndex, setSelectedChunkIndex] = React.useState(0);
 
-        // Only allow selection for the current chunk
         const handleAlternativeClick = (newWord) => {{
-            const chunkText = tokens[currentChunkIndex][0];
             const newTokens = tokens.map((token, i) =>
-                i === currentChunkIndex ? [newWord, token[1]] : token
+                i === selectedChunkIndex ? [newWord, token[1]] : token
             );
             setTokens(newTokens);
-            // Optionally update altPhrases if you want to keep alternatives for the new word
-            if (currentChunkIndex < tokens.length - 1) {{
-                setCurrentChunkIndex(currentChunkIndex + 1);
-            }} else {{
-                setDone(true);
+            // Advance to next chunk, or stay on current if it's the last one
+            if (selectedChunkIndex < tokens.length - 1) {{
+                setSelectedChunkIndex(selectedChunkIndex + 1);
             }}
             setTimeout(() => {{
                 window.parent.postMessage({{
@@ -64,9 +58,19 @@ def render_annotated(tokens: Sequence[Union[str, Tuple[str, str]]], alt_phrases:
             }}, 0);
         }};
 
+        const handleChunkClick = (index) => {{
+            setSelectedChunkIndex(selectedChunkIndex === index ? null : index);
+            setTimeout(() => {{
+                window.parent.postMessage({{
+                    type: 'setFrameHeight',
+                    height: document.body.scrollHeight
+                }}, '*');
+            }}, 0);
+        }};
+
         const renderAlternatives = () => {{
-            if (done) return null;
-            const chunkText = tokens[currentChunkIndex][0];
+            if (selectedChunkIndex === null) return null;
+            const chunkText = tokens[selectedChunkIndex][0];
             if (!altPhrases || !altPhrases[chunkText]) return null;
             return e('div', {{
                 style: {{
@@ -114,20 +118,19 @@ def render_annotated(tokens: Sequence[Union[str, Tuple[str, str]]], alt_phrases:
                 tokens.map((token, i) => {{
                     if (Array.isArray(token)) {{
                         const [word, label] = token;
-                        let bgColor = '#d0e6f7';
-                        if (!done && i === currentChunkIndex) {{
-                            bgColor = '#ffe066'; // yellow highlight for current chunk
-                        }}
+                        const isSelected = selectedChunkIndex === i;
+                        const bgColor = isSelected ? '#ffe066' : '#d0e6f7'; // yellow if selected, blue otherwise
                         return e('span', {{
                             key: i,
                             className: 'clickable',
+                            onClick: () => handleChunkClick(i),
                             style: {{
                                 backgroundColor: bgColor,
                                 padding: '4px 8px',
                                 margin: '0 4px',
                                 borderRadius: '5px',
-                                cursor: !done && i === currentChunkIndex ? 'pointer' : 'default',
-                                fontWeight: !done && i === currentChunkIndex ? 'bold' : 'normal',
+                                cursor: 'pointer',
+                                fontWeight: isSelected ? 'bold' : 'normal',
                                 transition: 'background-color 0.2s'
                             }}
                         }}, word);
@@ -135,8 +138,7 @@ def render_annotated(tokens: Sequence[Union[str, Tuple[str, str]]], alt_phrases:
                     return e('span', {{ key: i }}, token);
                 }})
             ),
-            !done && renderAlternatives(),
-            done && e('div', {{ style: {{ marginTop: '1rem', color: '#28a745', fontWeight: 'bold' }} }}, 'All chunks completed!')
+            renderAlternatives()
         ]);
     }}
 
