@@ -86,5 +86,48 @@ def alt_builder(chunk: str) -> list[str]:
     return list_alts
 
 
+def batch_whack_alt_phrasing(chunks: list[str], sug_count: int = 3):
+    model = "gpt-4o-mini"
+    from pathlib import Path
+    with open(_dir / "testing_and_research" / "phrasingprompt.txt", "r") as f:
+        instructions = f.read()
+    # Build a single prompt for all chunks
+    numbered_chunks = "\n".join([f"{i+1}. \"{chunk}\"" for i, chunk in enumerate(chunks)])
+    prompt = (
+        f"Give me at least {sug_count} alternatives to saying each of the following phrases. "
+        "Return the result as a Python dictionary mapping each phrase to a list of alternatives.\n\n"
+        f"{numbered_chunks}"
+    )
+    response = client.responses.create(
+        model=model,
+        instructions=instructions,
+        input=[
+            {
+                "role": "user",
+                "content": prompt,
+            },
+        ],
+    )
+    return response
+
+
+def batch_alt_builder(chunks: list[str], sug_count: int = 3) -> dict:
+    resp = batch_whack_alt_phrasing(chunks, sug_count)
+    # Expecting output_text to be a Python dict as a string
+    import ast
+    try:
+        alt_dict = ast.literal_eval(resp.output_text)
+        # Ensure all originals are included as first option
+        for chunk in chunks:
+            if chunk not in alt_dict:
+                alt_dict[chunk] = [chunk]
+            elif chunk not in alt_dict[chunk]:
+                alt_dict[chunk] = [chunk] + alt_dict[chunk]
+        return alt_dict
+    except Exception as e:
+        # Fallback: return each chunk mapped to itself
+        return {chunk: [chunk] for chunk in chunks}
+
+
 if __name__ == "__main__":
     alt_builder("A study spanning 80 years")
