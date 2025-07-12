@@ -1,5 +1,9 @@
 .venv/
 venv/
 testing_and_research/.env
-.DS_STORE
+.DS_Store
 .env
+
+# Node.js dependencies
+node_modules/
+my_component/frontend/node_modules/
